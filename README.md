@@ -285,6 +285,88 @@ A basic procedural audio router now exists for gunshots, suppressed shots, reloa
 - `scripts/systems/DynamicButton3D.gd`: buttons that respond to use, bullets, impulses, and thrown objects
 - `scripts/systems/ReactiveStaticBody3D.gd`: static geometry that can receive damage/impulse scars
 
+## Tangible Balance Rule
+
+This branch enforces a hard rule on every system: **buffs and nerfs must be tangible, not numeric**. The catalogs are written so that every effect is a named verb, an item the player can hold, a real plate that really shatters, a specific archetype that really reacts, or a concrete trigger condition. Bullets are real calibers with per-part lethality outcomes. Shock resistance comes from a specific worn item that confers shock resistance, not a "+20% protection" stat. The threat director and comms can read tags and trust thresholds by name. Code should branch on these named outcomes rather than scaling damage or chance.
+
+The runtime impact of every entry is summarized inline in the catalog data, so future work can keep adding mechanics as data without inflating runtime code. This is the answer to mechanic creep: extend the catalogs, do not invent new runtime modules unless a mechanic genuinely needs one.
+
+## Tangible Mechanics Catalogs
+
+`scripts/systems/StationSystemsCatalog.gd` now also exposes:
+
+- Salvage ID tags (role + last login sector + low-tier role-only access)
+- Damaged helmet states (cracked visor adds corruption drift to glasses; destroyed helmet absorbs exactly one fatal head shot)
+- Portable beacons (HP, lighthouse-for archetype list, sector power cost)
+- Chemical flares (color-coded provokes/confuses by archetype, oxygen consumption per second)
+- Door wedges (force_work resistance hit count, visible cracked state, telegraphed enemy removal seconds)
+- Field recorder (battery slot, capture seconds, distortion source)
+- Battery chargers (charge rate, noise signature, brownout coupling)
+- Makeshift sling (recipe, 60% of retention_sling drop resistance, slower swap, visible decay, snap failure)
+- Trauma foam (two diegetic verbs: spray joint, spray hinge)
+- Route chalk (verbs, corruption rewrite threshold, archetype visibility list)
+- Sound occlusion attenuation by material and door state
+- Limb armor slots (plates with shatter counts, dropped shards, movement noise cost)
+- Oxygen zones (suit_patch consumption, panic trigger, carrion archetype gating)
+- Scent trail rules (player bleed source, decon station verb)
+- Door memory rules (force_open threshold reduction per force, jam_count surfaced in route_mapper)
+- Weapon fouling states (visible tint, cleaning verbs, noise spike)
+- Flashlight intensity tiers (parasite avoidance per tier)
+- Threat classifier modes (silhouette vs thermal-through-walls with power drain)
+- Panic reload rules (pain/shock/combined thresholds, role flags, telegraph window)
+- Route fatigue rules (per-second stamina drain by route kind, ambush bonus on low-stamina exit)
+- Map sketching rules (physical presence only, corruption inserts false dead ends)
+- Stance states (silhouette fraction, noise multiplier, fire rate multiplier)
+- Lean states (head-only exposure during ADS)
+- Traversal verbs (vault, mantle, stack up, drag corpse)
+- Reload modes (dump, tactical, manual check)
+- Weapon malfunctions (stovepipe, failure to feed, double feed, hangfire)
+- Zeroed optics (per-sight zero range and drop)
+- Bolt-throwing rules (props usable, archetypes never affected)
+- Stress shake rules (inputs and tremor form)
+- Shadow visibility table (lighting state to visibility tier)
+- Body hiding rules (hide targets, blocks scent and surgeon attractor)
+- Whistle/shout rules (baited/ignored archetypes, single-use window)
+- Sound triangulation rules (sound_meter direction arrow, corruption flip)
+- Comm wheel options (six concrete contact requests)
+- Attaché case inventory (grid, holds, drop behavior)
+- Safehouse lockbox (predecessor reach window, slot count)
+- Ruined-condition pickup ranges
+- Attachment conflicts (named slot conflicts)
+- Stack-aware reload descriptors (in-fiction strings)
+- Anomaly rooms (verbs, consumed items)
+- Fire spread, electrified water, pressure differential, and temperature rules
+- Background liabilities (every background has a named benefit AND a named cost)
+- Kit case definition (per-survivor identity item)
+- NPC survivor encounters (concrete branch outcomes)
+- Predecessor ghost trail rules
+- Floor chapter identities and unique pickups
+- Resource decay rules
+- Lighthouse beacons (re-power costs and safe-comms radius extension)
+- Audio log entries by module
+
+## Ballistic Caliber Catalog
+
+`scripts/systems/BallisticCaliberCatalog.gd` replaces "damage" with **real-world calibers** and **per-part lethality outcomes** drawn from a small set of named tiers: `lethal`, `incap`, `deep`, `graze`, `stop`. Each caliber also defines its barrier behavior against drywall, thin metal, pressure doors, glass, soft body armor, plate armor, Carapace plate, and door lock housings. Ammo subloads (FMJ, AP, HP, tracer, subsonic, match grade, incendiary, frangible) shift those tiers up or down on lookup. The supersonic crack flag is also data-driven, so directional hints to parasites are an outcome of the round actually fired, not a difficulty slider.
+
+Tabled calibers include 9x19, .45 ACP, .357 Magnum, 5.7x28, 5.56x45, 7.62x39, .308 Winchester, 12 gauge buckshot and slug, .50 BMG, and flechette darts.
+
+## Immersive Sim Design Pillars (Data)
+
+`scripts/systems/ImmersiveSimDesign.gd` codifies the pillars as queryable data:
+
+- Per-room reputation tags (`bloodshed`, `forced`, `hoarder`, `wired`, `silent`, `scorched`) with archetype attractors.
+- Trust thresholds and trust delta verbs (obey distorted, refuse distorted, verify with field recorder).
+- Floor chapter objectives and the unlock each one grants.
+- Archetype reputation triggers (kill too many Choirs and a Surgeon hunt is spawned).
+- Environment tag set for the shared event bus (fire, gas, water, coolant, electric, steam, oxygen_thin, pressure_breach, smoke, bio_growth, low_temp, high_temp).
+- Pairwise environment reactions (coolant + electric = stunned zone, steam + fire = scalding burst, etc.) with explicit durations.
+- Save terminal node list (save only at safehouses, coupled to chapter floors).
+
+## Stopping Mechanic Creep
+
+The expectation is that no further runtime modules are added without an existing system being unable to express the new mechanic. New mechanics enter the game as catalog rows first. They graduate to runtime only when a catalog row is referenced by multiple systems and needs a small shared helper. This is how the prototype keeps the surface area of a memorable immersive sim without inflating its code.
+
 ## What Is Intentionally Gone
 
 - Top-down/mobile room design
