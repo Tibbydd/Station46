@@ -724,3 +724,983 @@ static func attachments_conflict(attachment_a: String, attachment_b: String) -> 
 		if (pair[0] == attachment_a and pair[1] == attachment_b) or (pair[0] == attachment_b and pair[1] == attachment_a):
 			return true
 	return false
+
+# --- Extended economy items (consumables, tools, deployables) ---
+
+static func get_extended_economy_items() -> Array[Dictionary]:
+	return [
+		{
+			"id": "hemostatic_gauze",
+			"label": "Hemostatic Gauze",
+			"uses": ["stop_bleed_limb", "reduce_bleed_rate"],
+			"apply_time": "slow",
+			"slot": "pouch",
+			"notes": "packs a wound; buys time before full treatment"
+		},
+		{
+			"id": "tourniquet",
+			"label": "Tourniquet",
+			"uses": ["stop_bleed_arm", "stop_bleed_leg", "sever_circulation_for_splint"],
+			"apply_time": "fast",
+			"slot": "pouch",
+			"notes": "stops bleed instantly; movement penalty on affected limb"
+		},
+		{
+			"id": "blood_bag_iv",
+			"label": "Blood Bag IV",
+			"uses": ["restore_blood_volume", "remove_hypovolemic_shock"],
+			"apply_time": "very_slow",
+			"slot": "inventory",
+			"notes": "requires sitting still; best used at safehouse or behind cover"
+		},
+		{
+			"id": "antibiotic_syringe",
+			"label": "Antibiotic Syringe",
+			"uses": ["clear_surface_infection", "slow_deep_infection", "halt_bio_contamination"],
+			"apply_time": "fast",
+			"slot": "pouch",
+			"notes": "only course-correct for infection; does not heal wounds"
+		},
+		{
+			"id": "radiation_tabs",
+			"label": "Radiation Tabs",
+			"uses": ["reduce_rad_exposure_tier", "delay_rad_sickness_onset"],
+			"apply_time": "instant",
+			"slot": "pouch",
+			"notes": "one tab drops exposure one tier; multiple tabs queue"
+		},
+		{
+			"id": "decon_wipes",
+			"label": "Decon Wipes",
+			"uses": ["clear_bio_contamination_surface", "remove_scent_trail", "clear_footprint_transfer"],
+			"apply_time": "fast",
+			"slot": "pouch",
+			"notes": "removes tracked residue from boots and hands"
+		},
+		{
+			"id": "oxygen_sniffer",
+			"label": "Oxygen Sniffer",
+			"uses": ["detect_oxygen_thin_zone", "warn_pressure_breach_approach"],
+			"apply_time": "passive",
+			"slot": "pouch",
+			"notes": "audible chirp accelerates as O2 drops; silent model uses glasses display"
+		},
+		{
+			"id": "glow_stick",
+			"label": "Glow Stick",
+			"uses": ["place_persistent_light", "mark_route", "lure_echo_archetype"],
+			"apply_time": "instant",
+			"slot": "pouch",
+			"duration": "long",
+			"notes": "dim but lasts hours; attracts echo; does not require power"
+		},
+		{
+			"id": "door_charge_patch",
+			"label": "Door Charge Patch",
+			"uses": ["breach_locked_door", "destroy_lock_housing", "clear_jammed_door"],
+			"apply_time": "slow",
+			"slot": "inventory",
+			"notes": "adheres to door surface; detonated remotely up to eight meters"
+		},
+		{
+			"id": "whisker_probe",
+			"label": "Whisker Probe",
+			"uses": ["detect_gas_under_door", "sample_air_composition", "sense_heat_gradient"],
+			"apply_time": "fast",
+			"slot": "pouch",
+			"notes": "slip under door gap; read result on glasses or by earpiece tone"
+		},
+		{
+			"id": "bone_conduction_mic",
+			"label": "Bone Conduction Mic",
+			"uses": ["listen_through_wall", "hear_enemy_breathing_adjacent", "detect_stalker_husk_proximity"],
+			"apply_time": "fast",
+			"slot": "pouch",
+			"notes": "press against bulkhead; audible up to two rooms; noisy armor degrades result"
+		},
+		{
+			"id": "signal_jammer",
+			"label": "Signal Jammer",
+			"uses": ["block_relay_voice_broadcast", "prevent_echo_coordination", "disable_locked_keypad"],
+			"apply_time": "slow",
+			"slot": "inventory",
+			"duration": "medium",
+			"notes": "placed device; also blocks player comms in radius while active"
+		},
+		{
+			"id": "bioscanner_patch",
+			"label": "Bioscanner Patch",
+			"uses": ["detect_sleeper_pod_dormant", "locate_bio_growth_source", "tag_bleeding_enemy"],
+			"apply_time": "passive",
+			"slot": "glasses_module",
+			"power_draw": "low",
+			"notes": "wet mass signature only; walls block scan; carapace shielded"
+		},
+		{
+			"id": "stasis_foam_canister",
+			"label": "Stasis Foam Canister",
+			"uses": ["seal_pressure_breach_small", "slow_door_forced_open", "immobilize_crawler_husk"],
+			"apply_time": "fast",
+			"slot": "inventory",
+			"notes": "hardens on contact; one canister seals one small breach or jams one door"
+		},
+		{
+			"id": "ferrofluid_lure",
+			"label": "Ferrofluid Lure",
+			"uses": ["attract_carapace_archetype", "mark_floor_visible_to_glasswalker", "block_magnetic_lock"],
+			"apply_time": "instant",
+			"slot": "pouch",
+			"notes": "splatter on floor; magnetic archetypes divert toward strongest concentration"
+		},
+		{
+			"id": "grapple_clamp",
+			"label": "Grapple Clamp",
+			"uses": ["traverse_shaft_vertical", "anchor_rope_for_successor", "yank_enemy_off_ledge"],
+			"apply_time": "slow",
+			"slot": "inventory",
+			"notes": "anchors to vent grilles or pipe flanges; rope stays for successor run"
+		},
+		{
+			"id": "cryo_patch",
+			"label": "Cryo Patch",
+			"uses": ["reduce_high_temp_exposure", "slow_bleed_rate_temporarily", "extend_low_temp_tolerance"],
+			"apply_time": "fast",
+			"slot": "pouch",
+			"notes": "adhesive cooling element; single use; pairs with blood_bag_iv for field stabilization"
+		},
+		{
+			"id": "breaching_slug",
+			"label": "Breaching Slug",
+			"uses": ["destroy_lock_housing_at_range", "crack_carapace_plate_at_range", "breach_pressure_door_weak_point"],
+			"apply_time": "passive",
+			"slot": "weapon_magazine",
+			"notes": "12ga subload; single shell; extremely loud; one-shot barrier interaction"
+		},
+	]
+
+# --- Extended wearable modules ---
+
+static func get_extended_wearable_modules() -> Array[Dictionary]:
+	return [
+		{
+			"id": "blood_pressure_cuff",
+			"label": "Blood Pressure Cuff",
+			"slot": "wrist",
+			"power_draw": "none",
+			"passive": true,
+			"effect": "display_hypovolemic_warning_and_bleed_rate",
+			"notes": "purely mechanical; always accurate regardless of corruption"
+		},
+		{
+			"id": "geiger_counter_module",
+			"label": "Geiger Counter",
+			"slot": "glasses_module",
+			"power_draw": "low",
+			"passive": true,
+			"effect": "display_rad_exposure_tier_and_zone_intensity",
+			"notes": "audible ticks always play regardless of glasses display state"
+		},
+		{
+			"id": "infection_sentinel",
+			"label": "Infection Sentinel",
+			"slot": "glasses_module",
+			"power_draw": "low",
+			"passive": true,
+			"effect": "display_infection_stage_and_antibiotic_countdown",
+			"notes": "corrupted display may show wrong stage name; tone cue remains truthful"
+		},
+		{
+			"id": "proximity_silhouette_detector",
+			"label": "Proximity Silhouette Detector",
+			"slot": "glasses_module",
+			"power_draw": "high",
+			"passive": true,
+			"effect": "draw_wire_outline_enemies_within_four_meters_through_wall",
+			"notes": "high draw; glasswalker and mimic_prop suppress their own signature"
+		},
+		{
+			"id": "oxygen_meter",
+			"label": "Oxygen Meter",
+			"slot": "wrist",
+			"power_draw": "none",
+			"passive": true,
+			"effect": "display_local_o2_level_and_time_to_hypoxia",
+			"notes": "wrist-mount; readable even if glasses are cracked or powered off"
+		},
+		{
+			"id": "rad_dose_counter",
+			"label": "Rad Dose Counter",
+			"slot": "glasses_module",
+			"power_draw": "minimal",
+			"passive": true,
+			"effect": "display_cumulative_rad_dose_and_safe_daily_limit_remaining",
+			"notes": "cumulative; resets at safehouse rest only"
+		},
+		{
+			"id": "motion_blur_suppressor",
+			"label": "Motion Blur Suppressor",
+			"slot": "glasses_module",
+			"power_draw": "low",
+			"passive": true,
+			"effect": "cancel_stress_shake_visual_and_reduce_sway_during_sprint",
+			"notes": "counteracts corruption-induced visual shake; does not affect actual aim spread"
+		},
+	]
+
+# --- Extended weapon attachments ---
+
+static func get_extended_weapon_attachments() -> Array[Dictionary]:
+	return [
+		{
+			"id": "bipod",
+			"label": "Bipod",
+			"slot": "underbarrel",
+			"compatible_families": ["rifle_ballistic", "industrial_slug"],
+			"effect_deployed": "eliminate_sway_when_prone_or_braced",
+			"effect_undeployed": "minor_handling_penalty",
+			"deploy_verb": "brace_bipod"
+		},
+		{
+			"id": "cheek_rest",
+			"label": "Cheek Rest",
+			"slot": "stock",
+			"compatible_families": ["rifle_ballistic", "heavy_ballistic", "shotgun_ballistic"],
+			"effect": "reduce_time_to_first_accurate_shot_from_low_ready",
+			"notes": "paired with zeroed optic for maximum benefit"
+		},
+		{
+			"id": "heat_shield",
+			"label": "Heat Shield",
+			"slot": "body",
+			"compatible_families": ["rifle_ballistic", "shotgun_ballistic"],
+			"effect": "prevent_arm_burn_from_sustained_fire",
+			"notes": "suppresses heat transfer to hands; no effect on weapon_condition degradation"
+		},
+		{
+			"id": "drum_magazine",
+			"label": "Drum Magazine",
+			"slot": "magazine",
+			"compatible_families": ["light_ballistic", "rifle_ballistic"],
+			"effect": "double_capacity_increase_reload_time_and_noise",
+			"notes": "rattles audibly when moving; partial drum tactile feel is unreliable"
+		},
+		{
+			"id": "wire_wrapped_stock",
+			"label": "Wire-Wrapped Stock",
+			"slot": "stock",
+			"compatible_families": ["light_ballistic", "heavy_ballistic", "rifle_ballistic", "shotgun_ballistic"],
+			"effect": "improve_grip_when_hands_wet_or_bloody",
+			"notes": "crude field mod; no durability loss but adds minor weight"
+		},
+		{
+			"id": "folding_stock",
+			"label": "Folding Stock",
+			"slot": "stock",
+			"compatible_families": ["light_ballistic", "rifle_ballistic"],
+			"effect_folded": "fit_weapon_in_backpack_slot_not_sling",
+			"effect_unfolded": "normal_handling",
+			"notes": "folding takes a moment; folded weapons cannot be fired"
+		},
+		{
+			"id": "ported_barrel",
+			"label": "Ported Barrel",
+			"slot": "muzzle",
+			"compatible_families": ["heavy_ballistic", "rifle_ballistic"],
+			"effect": "reduce_muzzle_rise_increase_noise_signature",
+			"notes": "incompatible with any suppressor; ports redirect gas upward and outward"
+		},
+		{
+			"id": "muzzle_brake",
+			"label": "Muzzle Brake",
+			"slot": "muzzle",
+			"compatible_families": ["rifle_ballistic", "industrial_slug", "shotgun_ballistic"],
+			"effect": "reduce_felt_recoil_increase_muzzle_blast_radius",
+			"notes": "nearby enemies react to concussive blast; suppressor incompatible"
+		},
+	]
+
+# --- Extended attachment conflict pairs ---
+
+static func get_extended_attachment_conflicts() -> Array[Dictionary]:
+	return [
+		{"a": "cheek_rest", "b": "wire_wrapped_stock", "reason": "stock_slot_occupied"},
+		{"a": "muzzle_brake", "b": "compact_suppressor", "reason": "muzzle_slot_occupied"},
+		{"a": "muzzle_brake", "b": "ported_barrel", "reason": "muzzle_slot_occupied"},
+		{"a": "ported_barrel", "b": "compact_suppressor", "reason": "vents_negate_suppression"},
+		{"a": "drum_magazine", "b": "extended_magazine", "reason": "magazine_slot_occupied"},
+		{"a": "bipod", "b": "foregrip", "reason": "underbarrel_slot_occupied"},
+		{"a": "folding_stock", "b": "cheek_rest", "reason": "stock_slot_occupied"},
+		{"a": "folding_stock", "b": "wire_wrapped_stock", "reason": "stock_slot_occupied"},
+		{"a": "heat_shield", "b": "laser_designator", "reason": "body_slot_occupied"},
+		{"a": "bipod", "b": "laser_designator", "reason": "underbarrel_slot_occupied"},
+		{"a": "drum_magazine", "b": "subsonic_magazine", "reason": "magazine_slot_occupied"},
+		{"a": "muzzle_brake", "b": "flash_hider", "reason": "muzzle_slot_occupied"},
+		{"a": "ported_barrel", "b": "flash_hider", "reason": "muzzle_slot_occupied"},
+	]
+
+# --- Extended floor traversal routes ---
+
+static func get_extended_floor_routes() -> Array[Dictionary]:
+	return [
+		{
+			"id": "emergency_blast_door_override",
+			"label": "Emergency Blast Door Override",
+			"floor_delta": 1,
+			"access_kind": "panel",
+			"unlock": "access_credential",
+			"condition": "power_online_in_corridor",
+			"notes": "only accessible if corridor power restored; opens both directions"
+		},
+		{
+			"id": "specimen_tube_transit",
+			"label": "Specimen Tube Transit",
+			"floor_delta": 2,
+			"access_kind": "crawl",
+			"unlock": "none",
+			"condition": "specimen_containment_unit_offline",
+			"notes": "research vault to medical deck; requires containment unit deactivated first"
+		},
+		{
+			"id": "collapsed_ceiling_crawl",
+			"label": "Collapsed Ceiling Crawl",
+			"floor_delta": 1,
+			"access_kind": "climb",
+			"unlock": "none",
+			"condition": "structural_zone_state_collapsed",
+			"notes": "opens when ceiling buckles; unstable_ceiling state precedes it"
+		},
+		{
+			"id": "water_reclaim_pipe",
+			"label": "Water Reclaim Pipe",
+			"floor_delta": -1,
+			"access_kind": "crawl",
+			"unlock": "none",
+			"condition": "pipe_drained",
+			"notes": "goes down one floor; player must drain it with coolant_canister first"
+		},
+		{
+			"id": "reactor_heat_shaft",
+			"label": "Reactor Heat Shaft",
+			"floor_delta": 3,
+			"access_kind": "climb",
+			"unlock": "none",
+			"condition": "reactor_vented_and_heat_shield_equipped",
+			"notes": "skip three floors but requires heat_shield attachment to survive passage"
+		},
+	]
+
+# --- Extended environmental kills ---
+
+static func get_extended_environmental_kills() -> Array[Dictionary]:
+	return [
+		{
+			"id": "specimen_containment_breach",
+			"label": "Specimen Containment Breach",
+			"trigger": "shoot_containment_unit_while_active",
+			"result": "release_bio_growth_flood_room",
+			"tags": ["bio_growth", "high_temp"],
+			"lures": ["carrion_eater", "shellroot"],
+			"notes": "containment fluid ignites on sustained fire; growth clears with fire"
+		},
+		{
+			"id": "oil_slick_ignition",
+			"label": "Oil Slick Ignition",
+			"trigger": "fire_tag_contacts_oil_slick_zone",
+			"result": "floor_fire_spreads_to_adjacent_tiles",
+			"tags": ["fire", "high_temp", "smoke"],
+			"lures": ["shellroot"],
+			"notes": "oil spreads from tipped tanks; fire follows spread boundary"
+		},
+		{
+			"id": "structural_collapse_trigger",
+			"label": "Structural Collapse",
+			"trigger": "explosive_in_stressed_zone",
+			"result": "zone_state_becomes_collapsed_creates_crawlspace_and_blocks_route",
+			"tags": ["smoke"],
+			"notes": "prerequisite buckling state; collapse is permanent for the run"
+		},
+		{
+			"id": "bio_growth_eruption",
+			"label": "Bio Growth Eruption",
+			"trigger": "high_temp_tag_contacts_mature_bio_growth",
+			"result": "spore_burst_infects_unmasked_targets_in_radius",
+			"tags": ["bio_growth", "smoke"],
+			"lures": ["shellroot", "carrion_eater"],
+			"notes": "player without decon_wipes acquires surface_infection immediately"
+		},
+		{
+			"id": "gravity_anchor_rip",
+			"label": "Gravity Anchor Rip",
+			"trigger": "grapple_clamp_applied_to_enemy_at_shaft_edge",
+			"result": "enemy_pulled_into_shaft_instant_lethal",
+			"tags": [],
+			"notes": "works on any non-shellroot enemy; shellroot anchors resist pull"
+		},
+		{
+			"id": "decon_shower_burst",
+			"label": "Decon Shower Burst",
+			"trigger": "activate_decon_shower_station_while_enemy_inside",
+			"result": "chemical_spray_strips_bio_growth_and_inflicts_deep_wound_carapace",
+			"tags": ["water", "gas"],
+			"notes": "decon chemical is corrosive to carapace plate specifically"
+		},
+		{
+			"id": "coolant_pipe_rupture",
+			"label": "Coolant Pipe Rupture",
+			"trigger": "shoot_marked_pipe_joint",
+			"result": "coolant_flood_zone_combo_ready_for_electric",
+			"tags": ["coolant", "low_temp"],
+			"notes": "pipe joint marked by orange stripe; rupture persists until player patches it"
+		},
+	]
+
+# --- Workbench crafting recipes ---
+
+static func get_workbench_crafting_recipes() -> Array[Dictionary]:
+	return [
+		{
+			"id": "noise_lure_from_speaker",
+			"label": "Wired Noise Lure",
+			"inputs": ["earpiece_patch", "cable_spool", "fuse"],
+			"output": "noise_lure",
+			"time_seconds": 12,
+			"noise": "quiet",
+			"requires_workbench": true
+		},
+		{
+			"id": "makeshift_suppressor",
+			"label": "Makeshift Suppressor",
+			"inputs": ["suppressor_wrap", "tool_parts", "coolant_canister"],
+			"output": "compact_suppressor",
+			"time_seconds": 20,
+			"noise": "quiet",
+			"requires_workbench": true
+		},
+		{
+			"id": "splint_from_parts",
+			"label": "Field Splint",
+			"inputs": ["splint_roll", "tool_parts"],
+			"output": "splint_reinforced",
+			"time_seconds": 8,
+			"noise": "silent",
+			"requires_workbench": false
+		},
+		{
+			"id": "trip_mine_from_charge",
+			"label": "Trip Mine",
+			"inputs": ["door_charge_patch", "cable_spool", "magnetic_puller"],
+			"output": "trip_mine",
+			"time_seconds": 18,
+			"noise": "silent",
+			"requires_workbench": true
+		},
+		{
+			"id": "chemical_flare_from_canister",
+			"label": "Chemical Flare",
+			"inputs": ["stasis_foam_canister", "static_charge"],
+			"output": "chemical_flare",
+			"time_seconds": 6,
+			"noise": "silent",
+			"requires_workbench": false
+		},
+		{
+			"id": "signal_jammer_from_parts",
+			"label": "Field Signal Jammer",
+			"inputs": ["tool_parts", "earpiece_patch", "power_cell"],
+			"output": "signal_jammer",
+			"time_seconds": 24,
+			"noise": "quiet",
+			"requires_workbench": true
+		},
+		{
+			"id": "hemostatic_gauze_from_medstock",
+			"label": "Hemostatic Gauze",
+			"inputs": ["med_stock"],
+			"output": "hemostatic_gauze",
+			"time_seconds": 4,
+			"noise": "silent",
+			"requires_workbench": false
+		},
+		{
+			"id": "glow_stick_from_flare_chemical",
+			"label": "Glow Stick",
+			"inputs": ["chemical_flare", "coolant_canister"],
+			"output": "glow_stick",
+			"time_seconds": 5,
+			"noise": "silent",
+			"requires_workbench": false
+		},
+		{
+			"id": "door_wedge_reinforced",
+			"label": "Reinforced Door Wedge",
+			"inputs": ["door_wedge", "tool_parts"],
+			"output": "door_wedge_reinforced",
+			"time_seconds": 10,
+			"noise": "quiet",
+			"requires_workbench": true
+		},
+		{
+			"id": "ferrofluid_lure_from_charge",
+			"label": "Ferrofluid Lure",
+			"inputs": ["static_charge", "coolant_canister"],
+			"output": "ferrofluid_lure",
+			"time_seconds": 8,
+			"noise": "silent",
+			"requires_workbench": false
+		},
+	]
+
+# --- Prop interaction catalog ---
+
+static func get_prop_interaction_catalog() -> Array[Dictionary]:
+	return [
+		{
+			"id": "pressure_valve",
+			"label": "Pressure Valve",
+			"verbs": ["turn_open", "turn_closed", "force_open"],
+			"effects": {
+				"turn_open": "release_steam_tag_into_room",
+				"turn_closed": "cut_steam_tag_from_room",
+				"force_open": "rupture_pipe_release_steam_burst_and_damage_valve"
+			}
+		},
+		{
+			"id": "emergency_bulkhead_lever",
+			"label": "Emergency Bulkhead Lever",
+			"verbs": ["pull", "lock", "sabotage"],
+			"effects": {
+				"pull": "seal_bulkhead_door_state_sealed",
+				"lock": "prevent_lever_use_until_unlocked",
+				"sabotage": "freeze_lever_in_current_state_permanently"
+			}
+		},
+		{
+			"id": "generator_fuel_tank",
+			"label": "Generator Fuel Tank",
+			"verbs": ["inspect", "drain", "ignite"],
+			"effects": {
+				"inspect": "reveal_fuel_level_low_medium_full",
+				"drain": "render_generator_non_functional_spill_oil_slick",
+				"ignite": "trigger_oil_slick_ignition_chain"
+			}
+		},
+		{
+			"id": "specimen_containment_unit",
+			"label": "Specimen Containment Unit",
+			"verbs": ["inspect", "deactivate", "shoot"],
+			"effects": {
+				"inspect": "reveal_contents_and_containment_integrity",
+				"deactivate": "open_specimen_tube_transit_route",
+				"shoot": "trigger_specimen_containment_breach_environmental_kill"
+			}
+		},
+		{
+			"id": "data_terminal",
+			"label": "Data Terminal",
+			"verbs": ["access", "insert_credential", "hard_reset"],
+			"effects": {
+				"access": "display_room_map_fragment_and_last_logged_event",
+				"insert_credential": "unlock_access_credential_door_or_cache",
+				"hard_reset": "wipe_lock_credentials_and_drop_door_to_jammed"
+			}
+		},
+		{
+			"id": "medical_cot",
+			"label": "Medical Cot",
+			"verbs": ["rest", "treat_wound", "search"],
+			"effects": {
+				"rest": "slow_bleed_rate_and_reduce_infection_stage_timer",
+				"treat_wound": "apply_med_stock_with_doubled_effectiveness",
+				"search": "chance_find_med_stock_or_crash_kit"
+			}
+		},
+		{
+			"id": "armory_locker",
+			"label": "Armory Locker",
+			"verbs": ["open", "force_open", "breach"],
+			"effects": {
+				"open": "access_cached_weapon_or_ammo_if_unlocked",
+				"force_open": "noise_loud_and_door_forced_tag_applied_to_room",
+				"breach": "use_door_charge_patch_silent_but_destroys_contents_partially"
+			}
+		},
+		{
+			"id": "corpse_disposal_chute",
+			"label": "Corpse Disposal Chute",
+			"verbs": ["open", "deposit_body", "crawl_in"],
+			"effects": {
+				"open": "reveal_chute_shaft_to_floor_below",
+				"deposit_body": "remove_body_from_room_deny_carrion_eater_feed",
+				"crawl_in": "traverse_to_floor_below_one_way_no_return"
+			}
+		},
+		{
+			"id": "vault_keypad",
+			"label": "Vault Keypad",
+			"verbs": ["enter_code", "bypass_with_credential", "destroy"],
+			"effects": {
+				"enter_code": "unlock_if_code_correct_otherwise_alert_signal",
+				"bypass_with_credential": "unlock_silently_and_consume_access_credential",
+				"destroy": "trigger_door_forced_reputation_tag_and_seal_door_permanently"
+			}
+		},
+		{
+			"id": "reinforced_floor_panel",
+			"label": "Reinforced Floor Panel",
+			"verbs": ["pry_open", "cut_with_cutting_charge", "knock_to_listen"],
+			"effects": {
+				"pry_open": "reveal_sub_floor_crawl_space_if_structural_zone_stable",
+				"cut_with_cutting_charge": "create_opening_and_drop_structural_zone_to_stressed",
+				"knock_to_listen": "hear_enemy_movement_in_room_below"
+			}
+		},
+		{
+			"id": "portable_generator_cart",
+			"label": "Portable Generator Cart",
+			"verbs": ["start", "refuel", "push_to_room"],
+			"effects": {
+				"start": "restore_power_to_adjacent_sockets_and_doors",
+				"refuel": "requires_power_cell_extends_run_time",
+				"push_to_room": "relocate_power_supply_to_target_room"
+			}
+		},
+		{
+			"id": "decon_shower_station",
+			"label": "Decon Shower Station",
+			"verbs": ["activate", "hold_enemy_inside", "sabotage"],
+			"effects": {
+				"activate": "clear_bio_contamination_from_player_and_emit_water_gas_tags",
+				"hold_enemy_inside": "trigger_decon_shower_burst_environmental_kill",
+				"sabotage": "overload_nozzles_fill_room_with_gas_tag"
+			}
+		},
+		{
+			"id": "comms_relay_node",
+			"label": "Comms Relay Node",
+			"verbs": ["repair", "broadcast_noise_lure", "destroy"],
+			"effects": {
+				"repair": "restore_comms_signal_to_floor_and_increase_trust_delta",
+				"broadcast_noise_lure": "transmit_noise_lure_sound_through_speaker_network",
+				"destroy": "silence_relay_voice_archetype_on_floor_until_repaired"
+			}
+		},
+	]
+
+# --- Environmental propagation rules ---
+
+static func get_smoke_propagation_rules() -> Dictionary:
+	return {
+		"movement": "follows_pressure_differential_toward_pressure_breach",
+		"stacking": "multiple_sources_increase_haze_density_tier",
+		"tiers": ["clear", "thin_haze", "heavy_haze", "blinding"],
+		"haze_effects": {
+			"thin_haze": "reduce_sight_range",
+			"heavy_haze": "reduce_sight_range_and_cough_noise",
+			"blinding": "near_zero_sight_and_fire_spreads_slowly"
+		},
+		"archetype_immunity": ["echo"],
+		"clears_via": ["pressure_breach", "ventilation_active", "fire_starves"]
+	}
+
+static func get_oil_slick_rules() -> Dictionary:
+	return {
+		"origin": "tipped_generator_fuel_tank_or_damaged_machinery",
+		"spread": "flows_downhill_or_along_floor_cracks_up_to_four_meters",
+		"ignition_sources": ["fire_tag", "static_charge", "sparking_electric_tag"],
+		"slip_chance": "any_character_crossing_at_run_speed_may_stumble",
+		"fire_multiplier": "fire_on_oil_spreads_faster_and_intensifies",
+		"extinguish_via": ["coolant_tag", "stasis_foam_canister"],
+		"tracks_boots": "characters_crossing_slick_leave_oil_footprints"
+	}
+
+static func get_radiation_exposure_rules() -> Dictionary:
+	return {
+		"tiers": ["trace", "low", "moderate", "high", "critical"],
+		"tier_effects": {
+			"trace": "none",
+			"low": "geiger_chirp_and_rad_dose_counter_update",
+			"moderate": "vision_grain_and_nausea_slow",
+			"high": "bleed_rate_increase_and_manual_aim_shake",
+			"critical": "organ_failure_rapid_lethal_if_untreated"
+		},
+		"mitigation": {
+			"radiation_tabs": "drop_one_tier_per_tab",
+			"leaving_zone": "exposure_tier_holds_for_ninety_seconds_then_decays",
+			"rad_dose_counter": "warns_before_high_tier"
+		},
+		"zone_sources": ["reactor_core_breach", "irradiated_specimen_fluid", "damaged_rad_shielding"]
+	}
+
+static func get_footprint_tracking_rules() -> Dictionary:
+	return {
+		"substances": ["blood", "coolant", "oil", "bio_growth_spore"],
+		"transfer": "player_crossing_tagged_tile_coats_boots_for_up_to_ten_steps",
+		"visibility": "footprints_visible_as_residue_marks_on_clean_floor",
+		"trackers": ["bleeder", "stalker_husk", "surgeon"],
+		"counter": "decon_wipes_clear_boot_coating_and_erase_trail",
+		"persistence": "footprints_remain_for_the_run_unless_cleaned"
+	}
+
+static func get_campfire_rules() -> Dictionary:
+	return {
+		"craft_inputs": ["tool_parts", "cable_spool"],
+		"craft_time": "slow",
+		"requires_workbench": false,
+		"warmth_radius": "three_meters",
+		"effects": {
+			"player_in_warmth": "slow_bleed_rate_rise_from_high_temp_and_dry_wet_suit",
+			"light_emitted": "medium_glow_attracts_echo_and_carrion_eater",
+			"fire_tag": "fire_tag_active_for_reaction_chains"
+		},
+		"repels": ["echo"],
+		"attracts": ["stalker_husk", "carrion_eater"],
+		"extinguish_via": ["coolant_tag", "stasis_foam_canister", "water_tag"]
+	}
+
+static func get_noise_trap_creation_rules() -> Dictionary:
+	return {
+		"components": ["earpiece_patch", "cable_spool", "fuse"],
+		"wire_to": "powered_speaker_or_comms_relay_node",
+		"trigger": "tripwire_or_remote_via_earpiece_patch",
+		"sound_output": "loud_sharp_noise_burst_at_speaker_location",
+		"lures": ["stalker_husk", "crawler_husk", "echo"],
+		"alarm_raises": "noise_pressure_in_threat_director",
+		"limitations": "speaker_must_have_power; cable_spool_consumed_on_placement"
+	}
+
+static func get_room_barricade_state_rules() -> Dictionary:
+	return {
+		"states": ["open", "lightly_barricaded", "heavily_barricaded", "sealed"],
+		"state_effects": {
+			"open": "normal_enemy_and_player_movement",
+			"lightly_barricaded": "slow_enemy_forced_entry_noise_door_forced_tag",
+			"heavily_barricaded": "require_cutting_charge_or_prolonged_forced_entry",
+			"sealed": "impassable_without_breach_door_charge_patch_or_structural_collapse"
+		},
+		"persistence": "state_survives_across_survivor_runs",
+		"build_materials": {
+			"lightly_barricaded": ["door_wedge"],
+			"heavily_barricaded": ["door_wedge", "cable_spool", "tool_parts"],
+			"sealed": ["cutting_charge", "tool_parts", "cable_spool"]
+		},
+		"decay": "enemies_with_forced_entry_trait_downgrade_one_tier_per_assault"
+	}
+
+static func get_speaker_network_rules() -> Dictionary:
+	return {
+		"requirement": "comms_relay_node_repaired_on_floor",
+		"archetype_uses": {
+			"relay_voice": "broadcasts_misdirection_audio_through_repaired_nodes",
+		},
+		"player_uses": {
+			"broadcast_noise_lure": "transmit_noise_lure_to_any_active_speaker_on_floor",
+			"hear_adjacent_room": "passive_audio_bleed_from_connected_rooms"
+		},
+		"disable_via": ["signal_jammer", "destroy_comms_relay_node", "cut_cable_spool"],
+		"relay_voice_suppressed_when": "all_nodes_on_floor_disabled_or_jammed"
+	}
+
+static func get_bioluminescence_rules() -> Dictionary:
+	return {
+		"source": "mature_bio_growth_in_rooms_with_no_active_lights",
+		"light_level": "faint_blue_green_enough_to_navigate_without_flashlight",
+		"corruption_effect": "at_corruption_above_fifty_bioluminescence_pulses_and_appears_to_move",
+		"archetype_interaction": {
+			"echo": "attracted_not_repelled_uses_glow_as_patrol_anchor",
+			"shellroot": "anchors_growth_nodes_near_glow_patches"
+		},
+		"player_action": "bio_growth_can_be_harvested_with_decon_wipes_as_temp_light_source",
+		"fire_interaction": "fire_tag_clears_growth_and_extinguishes_bioluminescence_permanently_in_tile"
+	}
+
+# --- Infection states ---
+
+static func get_infection_states() -> Array[Dictionary]:
+	return [
+		{
+			"id": "surface_infection",
+			"label": "Surface Infection",
+			"onset_time": 45,
+			"symptoms": ["minor_itch_sound_cue"],
+			"progresses_to": "deep_infection",
+			"treatment": ["antibiotic_syringe", "decon_wipes"]
+		},
+		{
+			"id": "deep_infection",
+			"label": "Deep Infection",
+			"onset_time": 90,
+			"symptoms": ["bleed_rate_increase", "movement_slow", "stamina_drain"],
+			"progresses_to": "septic",
+			"treatment": ["antibiotic_syringe"]
+		},
+		{
+			"id": "septic",
+			"label": "Septic",
+			"onset_time": 120,
+			"symptoms": ["vision_grain", "corruption_gain_per_second", "severe_stamina_drain"],
+			"progresses_to": "lethal_if_untreated",
+			"treatment": ["antibiotic_syringe_double_dose"]
+		},
+		{
+			"id": "bio_contamination",
+			"label": "Bio Contamination",
+			"onset_time": 0,
+			"symptoms": ["immediate_surface_infection", "spore_cloud_on_movement", "infects_nearby_player"],
+			"progresses_to": "deep_infection",
+			"treatment": ["antibiotic_syringe", "decon_shower_station"]
+		},
+	]
+
+# --- Structural zone states ---
+
+static func get_structural_zone_states() -> Array[Dictionary]:
+	return [
+		{
+			"id": "stable",
+			"label": "Stable",
+			"traversal": "full",
+			"collapse_risk": "none"
+		},
+		{
+			"id": "stressed",
+			"label": "Stressed",
+			"traversal": "full",
+			"collapse_risk": "explosive_or_heavy_impact",
+			"visual_cue": "cracked_panels_dust_on_footstep"
+		},
+		{
+			"id": "buckling",
+			"label": "Buckling",
+			"traversal": "full_with_noise",
+			"collapse_risk": "any_gunshot_or_forced_entry",
+			"visual_cue": "sagging_ceiling_active_debris_fall",
+			"noise": "structural_groan_periodically"
+		},
+		{
+			"id": "collapsed",
+			"label": "Collapsed",
+			"traversal": "crawl_only",
+			"collapse_risk": "none",
+			"visual_cue": "rubble_field_low_ceiling",
+			"opens_route": "collapsed_ceiling_crawl",
+			"blocks_route": "original_upright_passage"
+		},
+		{
+			"id": "unstable_ceiling",
+			"label": "Unstable Ceiling",
+			"traversal": "full",
+			"collapse_risk": "sustained_noise_above_threshold",
+			"visual_cue": "ceiling_tiles_loose_dust_streams",
+			"notes": "precursor to buckling; loud combat can skip directly to collapsed"
+		},
+	]
+
+# --- Weapon inspection verbs ---
+
+static func get_weapon_inspection_verbs() -> Array[Dictionary]:
+	return [
+		{
+			"id": "check_barrel",
+			"label": "Check Barrel",
+			"time": "fast",
+			"result": "reveal_fouling_level_and_jam_risk",
+			"noise": "silent"
+		},
+		{
+			"id": "field_strip",
+			"label": "Field Strip",
+			"time": "slow",
+			"result": "clear_any_active_malfunction_and_reset_weapon_condition_partial",
+			"noise": "quiet",
+			"requires": "tool_parts"
+		},
+		{
+			"id": "tap_feed",
+			"label": "Tap and Feed",
+			"time": "fast",
+			"result": "clear_failure_to_feed_malfunction",
+			"noise": "quiet"
+		},
+		{
+			"id": "count_remaining",
+			"label": "Count Remaining",
+			"time": "fast",
+			"result": "tactile_feel_of_magazine_weight_rough_round_count",
+			"noise": "silent",
+			"notes": "drum_magazine gives unreliable feel; corruption may distort display"
+		},
+		{
+			"id": "clear_chamber",
+			"label": "Clear Chamber",
+			"time": "fast",
+			"result": "eject_chambered_round_to_floor_safe_weapon_state",
+			"noise": "quiet"
+		},
+	]
+
+# --- Door charge rules ---
+
+static func get_door_charge_rules() -> Dictionary:
+	return {
+		"item": "door_charge_patch",
+		"apply_verb": "plant",
+		"apply_time": "slow",
+		"detonate_range_meters": 8,
+		"detonate_verb": "detonate_remote",
+		"barrier_results": {
+			"lock_housing": "destroy",
+			"pressure_door": "stop_pit",
+			"thin_metal": "pass"
+		},
+		"noise": "hazard_blast",
+		"structural_effect": "drop_zone_state_one_tier_if_stressed_or_buckling",
+		"corpse_effect": "scatter_any_body_in_one_meter_radius"
+	}
+
+# --- Body language cues ---
+
+static func get_body_language_cues() -> Array[Dictionary]:
+	return [
+		{
+			"id": "labored_breathing",
+			"label": "Labored Breathing",
+			"condition": "stamina_below_25_percent",
+			"cue": "audible_ragged_inhale_exhale",
+			"detectable_by": ["bleeder", "stalker_husk", "echo"],
+			"player_aware": true
+		},
+		{
+			"id": "blood_drip_sound",
+			"label": "Blood Drip",
+			"condition": "bleed_rate_above_3_per_second",
+			"cue": "intermittent_wet_impact_on_floor",
+			"detectable_by": ["bleeder", "surgeon", "carrion_eater"],
+			"leaves_footprint_substance": "blood",
+			"player_aware": true
+		},
+		{
+			"id": "armor_clink",
+			"label": "Armor Clink",
+			"condition": "plate_armor_equipped_and_moving_at_run_speed",
+			"cue": "rhythmic_metal_tap",
+			"detectable_by": ["echo", "stalker_husk", "choir"],
+			"suppress_via": "wire_wrapped_stock_has_no_effect_only_suit_patch_dampens",
+			"player_aware": false
+		},
+		{
+			"id": "suppressed_cough",
+			"label": "Suppressed Cough",
+			"condition": "in_heavy_haze_smoke_without_mask",
+			"cue": "stifled_cough_every_few_seconds",
+			"detectable_by": ["stalker_husk", "crawler_husk", "howler"],
+			"player_aware": true
+		},
+		{
+			"id": "corruption_hum",
+			"label": "Corruption Hum",
+			"condition": "corruption_above_65",
+			"cue": "faint_electronic_resonance_from_glasses_and_earpiece",
+			"detectable_by": ["relay_voice", "echo", "choir"],
+			"notes": "signal noise makes player detectable to signal-aware archetypes regardless of movement noise"
+		},
+	]
