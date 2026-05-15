@@ -119,7 +119,32 @@ func _build_camera() -> void:
 	camera.current = true
 	camera.fov = 75.0
 	head.add_child(camera)
+	_build_body_visual()
 	_build_weapon_visual()
+
+func _build_body_visual() -> void:
+	# Body and head meshes are SHADOWS_ONLY so the FPS camera never sees them,
+	# but the player still casts a real silhouette into the world for lighting
+	# and external camera reviews. No collision is added here — the existing
+	# capsule_shape already provides physical presence.
+	var body := MeshInstance3D.new()
+	body.name = "PlayerBodyShadow"
+	var body_mesh := CapsuleMesh.new()
+	body_mesh.radius = 0.34
+	body_mesh.height = 1.5
+	body.mesh = body_mesh
+	body.position.y = 0.88
+	body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
+	add_child(body)
+	var head_silhouette := MeshInstance3D.new()
+	head_silhouette.name = "PlayerHeadShadow"
+	var head_mesh := SphereMesh.new()
+	head_mesh.radius = 0.22
+	head_mesh.height = 0.44
+	head_silhouette.mesh = head_mesh
+	head_silhouette.position.y = 1.7
+	head_silhouette.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
+	add_child(head_silhouette)
 
 func _build_weapon_visual() -> void:
 	weapon_pivot = Node3D.new()
