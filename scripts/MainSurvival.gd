@@ -925,13 +925,15 @@ func _build_npc_survivors() -> void:
 	]
 	for encounter in encounters:
 		var npc := NpcSurvivor3D.new()
+		var encounter_color: Color = encounter["color"]
+		var encounter_position: Vector3 = encounter["position"]
 		npc.configure(
 			String(encounter["encounter_id"]),
 			String(encounter["role_label"]),
-			encounter["color"] as Color
+			encounter_color
 		)
 		arena_root.add_child(npc)
-		npc.global_position = encounter["position"] as Vector3
+		npc.global_position = encounter_position
 
 func _spawn_demo_enemies() -> void:
 	# One of each main archetype, parked at known positions so the first launch
@@ -947,8 +949,9 @@ func _spawn_demo_enemies() -> void:
 	]
 	for demo in demos:
 		var enemy := EnemyBase3D.new()
+		var demo_position: Vector3 = demo["position"]
 		enemy.archetype_id = String(demo["id"])
-		enemy.global_position = demo["position"] as Vector3
+		enemy.global_position = demo_position
 		enemy_container.add_child(enemy)
 		enemy.set_target(player)
 		threat_director.active_enemies.append(enemy)
