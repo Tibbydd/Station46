@@ -44,7 +44,7 @@ func _physics_process(delta: float) -> void:
 
 func _advance_projectile(delta: float) -> void:
 	var projected_motion := velocity * delta
-	var step_count := max(1, int(ceil(projected_motion.length() / max_step_distance)))
+	var step_count: int = max(1, int(ceil(projected_motion.length() / max_step_distance)))
 	var step_delta := delta / float(step_count)
 	for i in range(step_count):
 		velocity.y -= gravity * step_delta

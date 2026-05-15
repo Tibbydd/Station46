@@ -109,7 +109,7 @@ func _room_weight(room: Dictionary) -> float:
 	return lerp(float(room["unexplored_weight"]), 2.0, memory_progress)
 
 func get_station_memory_progress() -> float:
-	var room_count := max(1, rooms.size())
+	var room_count: int = max(1, rooms.size())
 	return clamp(float(survivor_entries) / float(room_count * 2), 0.0, 1.0)
 
 func record_survivor_entry(room_id: String) -> void:

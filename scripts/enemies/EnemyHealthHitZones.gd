@@ -24,7 +24,7 @@ func setup(new_enemy: EnemyBase3D, definition: Dictionary = {}) -> void:
 func receive_hit(zone_name: String, base_damage: float, multiplier: float, lethal: bool, armor: float, hit_position: Vector3, _hit_direction: Vector3, weapon_name: String) -> void:
 	if is_dead:
 		return
-	var armor_reduction := clamp(armor, 0.0, 0.85)
+	var armor_reduction: float = clamp(armor, 0.0, 0.85)
 	var final_damage := base_damage * multiplier * (1.0 - armor_reduction)
 	if lethal and base_damage >= 24.0:
 		final_damage = max(final_damage, max_health * 2.0)

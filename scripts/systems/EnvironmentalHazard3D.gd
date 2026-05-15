@@ -60,7 +60,7 @@ func _damage_nearby_enemies() -> void:
 		var distance := enemy_node.global_position.distance_to(global_position)
 		if distance > effect_radius:
 			continue
-		var falloff := clamp(1.0 - distance / effect_radius, 0.2, 1.0)
+		var falloff: float = clamp(1.0 - distance / effect_radius, 0.2, 1.0)
 		var direction := (enemy_node.global_position - global_position).normalized()
 		if direction.length() < 0.01:
 			direction = Vector3.UP
@@ -77,7 +77,7 @@ func _damage_nearby_player() -> void:
 		var distance := player.global_position.distance_to(global_position)
 		if distance > effect_radius:
 			continue
-		var falloff := clamp(1.0 - distance / effect_radius, 0.15, 1.0)
+		var falloff: float = clamp(1.0 - distance / effect_radius, 0.15, 1.0)
 		var zone := PlayerHealthBodyParts.PART_CHEST
 		if hazard_type == "steam":
 			zone = PlayerHealthBodyParts.PART_HEAD

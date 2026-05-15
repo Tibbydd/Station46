@@ -294,7 +294,7 @@ func get_stamina_modifier() -> float:
 	var chest: Dictionary = parts[PART_CHEST]
 	var stomach_ratio := float(stomach["current"]) / float(stomach["max"])
 	var chest_ratio := float(chest["current"]) / float(chest["max"])
-	var blood_modifier := clamp(blood_volume / 100.0, 0.25, 1.0)
+	var blood_modifier: float = clamp(blood_volume / 100.0, 0.25, 1.0)
 	return clamp(min(stomach_ratio, chest_ratio) * blood_modifier, 0.25, 1.0)
 
 func get_status_lines() -> Array[String]:

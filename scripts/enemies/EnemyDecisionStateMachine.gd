@@ -61,7 +61,7 @@ func update(enemy: EnemyBase3D, senses: EnemySenses3D, player: PlayerControllerF
 
 func _predicted_player_position(enemy: EnemyBase3D, player: PlayerControllerFPS) -> Vector3:
 	var distance := enemy.global_position.distance_to(player.global_position)
-	var lead_time := clamp(distance / 12.0, 0.1, 1.1)
+	var lead_time: float = clamp(distance / 12.0, 0.1, 1.1)
 	var guess_error := Vector3(randf_range(-1.0, 1.0), 0.0, randf_range(-1.0, 1.0))
 	if randf() < 0.18:
 		guess_error *= randf_range(2.0, 4.0)
