@@ -5,17 +5,34 @@ var integrity: float = 120.0
 var scar_level: float = 0.0
 var surface_id: String = "metal"
 var destroyed: bool = false
+var destructible: bool = true
+var accepts_impulse_damage: bool = true
+var hit_damage_scale: float = 0.2
+var impulse_damage_scale: float = 0.05
 
 func _ready() -> void:
 	add_to_group("dynamic_environment")
 	collision_layer = 1
 	collision_mask = 0
 
+func configure_reactivity(new_surface_id: String, new_destructible: bool = true, new_integrity: float = 120.0, new_accepts_impulse_damage: bool = true) -> void:
+	surface_id = new_surface_id
+	destructible = new_destructible
+	integrity = new_integrity
+	accepts_impulse_damage = new_accepts_impulse_damage
+	if not destructible:
+		hit_damage_scale = 0.0
+		impulse_damage_scale = 0.0
+	else:
+		hit_damage_scale = 0.2
+		impulse_damage_scale = 0.05
+
 func receive_generic_hit(damage: float, hit_position: Vector3, _hit_direction: Vector3) -> void:
 	if destroyed:
 		return
 	scar_level = clamp(scar_level + damage * 0.01, 0.0, 1.0)
-	integrity -= damage * 0.2
+	if destructible:
+		integrity -= damage * hit_damage_scale
 	_update_scar_visual()
 	_check_destroyed(hit_position)
 
@@ -23,7 +40,8 @@ func apply_environment_impulse(origin: Vector3, force: float, _radius: float, _r
 	if destroyed:
 		return
 	scar_level = clamp(scar_level + force * 0.01, 0.0, 1.0)
-	integrity -= force * 0.05
+	if destructible and accepts_impulse_damage:
+		integrity -= force * impulse_damage_scale
 	_update_scar_visual()
 	_check_destroyed(origin)
 
@@ -39,10 +57,12 @@ func get_surface_id() -> String:
 	return surface_id
 
 func get_penetration_loss() -> float:
+	if not destructible:
+		return 900.0
 	return 42.0
 
 func _check_destroyed(impact_position: Vector3) -> void:
-	if integrity > 0.0 or destroyed:
+	if not destructible or integrity > 0.0 or destroyed:
 		return
 	destroyed = true
 	collision_layer = 0

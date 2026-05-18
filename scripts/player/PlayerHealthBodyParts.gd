@@ -22,6 +22,7 @@ var untreated_bleed_time: float = 0.0
 var pain: float = 0.0
 var shock: float = 0.0
 var stimulant_time: float = 0.0
+var burn_time: float = 0.0
 var is_dead: bool = false
 var active_treatment: String = ""
 var treatment_time_left: float = 0.0
@@ -46,6 +47,8 @@ func _process(delta: float) -> void:
 		shock = max(0.0, shock - delta * 3.0)
 	if stimulant_time > 0.0:
 		stimulant_time = max(0.0, stimulant_time - delta)
+	if burn_time > 0.0:
+		burn_time = max(0.0, burn_time - delta)
 	if treatment_time_left > 0.0:
 		treatment_time_left -= delta
 		if treatment_time_left <= 0.0:
@@ -68,6 +71,7 @@ func reset() -> void:
 	pain = 0.0
 	shock = 0.0
 	stimulant_time = 0.0
+	burn_time = 0.0
 	is_dead = false
 	active_treatment = ""
 	treatment_time_left = 0.0
@@ -93,6 +97,8 @@ func apply_damage(part_name: String, amount: float, damage_type: String = "traum
 		part["fractured"] = true
 	if amount >= 10.0 and damage_type != "blunt":
 		bleed_rate += amount * 0.035
+	if damage_type == "burn" or damage_type == "fire" or damage_type == "thermal" or damage_type == "steam":
+		burn_time = max(burn_time, clamp(amount * 0.22, 2.5, 12.0))
 	pain = min(100.0, pain + amount * 0.8)
 	shock = min(100.0, shock + amount * 0.35)
 	parts[part_name] = part
@@ -317,4 +323,6 @@ func get_status_lines() -> Array[String]:
 		lines.append("BLEEDING %.1f/s" % bleed_rate)
 	if stimulant_time > 0.0:
 		lines.append("STIM %.0fs" % stimulant_time)
+	if burn_time > 0.0:
+		lines.append("BURNING %.0fs" % burn_time)
 	return lines
