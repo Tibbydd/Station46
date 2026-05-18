@@ -3,7 +3,7 @@ class_name BallisticProjectile
 
 var damage: float = 35.0
 var velocity: Vector3 = Vector3.ZERO
-var gravity: float = 9.8
+var projectile_gravity: float = 9.8
 var lifetime: float = 2.0
 var weapon_name: String = "Projectile Weapon"
 var source_body: Node
@@ -18,7 +18,7 @@ func configure(origin: Vector3, direction: Vector3, speed: float, new_damage: fl
 	previous_position = origin
 	velocity = direction.normalized() * speed
 	damage = new_damage
-	gravity = new_gravity
+	projectile_gravity = new_gravity
 	lifetime = new_lifetime
 	weapon_name = new_weapon_name
 	source_body = new_source_body
@@ -47,7 +47,7 @@ func _advance_projectile(delta: float) -> void:
 	var step_count: int = max(1, int(ceil(projected_motion.length() / max_step_distance)))
 	var step_delta := delta / float(step_count)
 	for i in range(step_count):
-		velocity.y -= gravity * step_delta
+		velocity.y -= projectile_gravity * step_delta
 		var next_position := global_position + velocity * step_delta
 		var collider: Object = _find_overlap_at(next_position)
 		global_position = next_position

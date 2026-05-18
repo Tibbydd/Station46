@@ -55,7 +55,11 @@ func _apply_archetype_definition(definition: Dictionary) -> void:
 	archetype_label = String(definition.get("label", archetype_label))
 	base_speed = float(definition.get("speed", base_speed))
 	attack_range = float(definition.get("attack_range", attack_range))
-	archetype_traits = definition.get("traits", []).duplicate(true)
+	var raw_traits: Variant = definition.get("traits")
+	if raw_traits is Array:
+		archetype_traits = raw_traits.duplicate(true)
+	else:
+		archetype_traits = []
 
 func _on_noise_for_dormant(noise_position: Vector3, loudness: float) -> void:
 	if dormant_awake or not archetype_traits.has("dormant"):
@@ -243,7 +247,11 @@ func _build_physics_body() -> void:
 	add_child(collision)
 
 func _build_visuals() -> void:
-	var color: Color = EnemyArchetypeCatalog.get_archetype(archetype_id).get("color", Color(0.22, 0.25, 0.28))
+	var arch_def: Dictionary = EnemyArchetypeCatalog.get_archetype(archetype_id)
+	var color := Color(0.22, 0.25, 0.28)
+	var raw_color: Variant = arch_def.get("color")
+	if raw_color is Color:
+		color = raw_color
 	body_mesh = MeshInstance3D.new()
 	var capsule := CapsuleMesh.new()
 	capsule.radius = 0.35

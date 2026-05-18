@@ -55,8 +55,11 @@ func _update_combo_memory(position: Vector3, radius: float, force: float, reason
 
 func _try_coolant_arc_combo(position: Vector3, radius: float, force: float, other_events: Array[Dictionary]) -> void:
 	for event in other_events:
-		var other_position: Vector3 = event["position"]
-		var other_radius := float(event["radius"])
+		var raw_pos: Variant = event.get("position")
+		if not (raw_pos is Vector3):
+			continue
+		var other_position: Vector3 = raw_pos
+		var other_radius: float = float(event.get("radius", 0.0))
 		if other_position.distance_to(position) > other_radius + radius:
 			continue
 		GameEvents.request_sound("hazard_electric", position.lerp(other_position, 0.5), 1.0)
