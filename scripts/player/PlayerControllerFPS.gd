@@ -119,7 +119,32 @@ func _build_camera() -> void:
 	camera.current = true
 	camera.fov = 75.0
 	head.add_child(camera)
+	_build_body_visual()
 	_build_weapon_visual()
+
+func _build_body_visual() -> void:
+	# Body and head meshes are SHADOWS_ONLY so the FPS camera never sees them,
+	# but the player still casts a real silhouette into the world for lighting
+	# and external camera reviews. No collision is added here — the existing
+	# capsule_shape already provides physical presence.
+	var body := MeshInstance3D.new()
+	body.name = "PlayerBodyShadow"
+	var body_mesh := CapsuleMesh.new()
+	body_mesh.radius = 0.34
+	body_mesh.height = 1.5
+	body.mesh = body_mesh
+	body.position.y = 0.88
+	body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
+	add_child(body)
+	var head_silhouette := MeshInstance3D.new()
+	head_silhouette.name = "PlayerHeadShadow"
+	var head_mesh := SphereMesh.new()
+	head_mesh.radius = 0.22
+	head_mesh.height = 0.44
+	head_silhouette.mesh = head_mesh
+	head_silhouette.position.y = 1.7
+	head_silhouette.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
+	add_child(head_silhouette)
 
 func _build_weapon_visual() -> void:
 	weapon_pivot = Node3D.new()
@@ -506,7 +531,7 @@ func _get_diegetic_ammo_display() -> String:
 	if not mental or mental.corruption < 70.0:
 		return weapon.get_ammo_display()
 	if randf() < 0.35:
-		var false_count := max(0, weapon.current_ammo + randi_range(-3, 3))
+		var false_count: int = max(0, weapon.current_ammo + randi_range(-3, 3))
 		return "%d / %d" % [false_count, weapon.reserve_ammo]
 	return weapon.get_ammo_display()
 
@@ -591,11 +616,11 @@ func _get_close_enemy_interference(forward: Vector3) -> Vector2:
 		var forward_dot := forward.dot(to_enemy.normalized())
 		if forward_dot < 0.35:
 			continue
-		var local_enemy := camera.global_transform.affine_inverse() * enemy.global_position
-		var side := sign(local_enemy.x)
+		var local_enemy: Vector3 = camera.global_transform.affine_inverse() * (enemy.global_position as Vector3)
+		var side: float = sign(local_enemy.x)
 		if side == 0.0:
 			side = barrel_push_side if abs(barrel_push_side) > 0.01 else 1.0
-		var amount := clamp(1.0 - (distance - 0.35) / 1.0, 0.0, 1.0) * forward_dot
+		var amount: float = clamp(1.0 - (distance - 0.35) / 1.0, 0.0, 1.0) * forward_dot
 		if amount > best_amount:
 			best_amount = amount
 			best_side = side
@@ -1000,7 +1025,7 @@ func _spawn_predecessor_ghost_route(packed_path: Array) -> void:
 	var scene := get_tree().current_scene
 	if not scene:
 		return
-	var step := max(1, int(packed_path.size() / 18))
+	var step: int = max(1, int(packed_path.size() / 18))
 	for index in range(0, packed_path.size(), step):
 		var point_value = packed_path[index]
 		if not (point_value is Array) or point_value.size() < 3:
@@ -1073,7 +1098,7 @@ func _update_notice(delta: float) -> void:
 func _update_lens_material() -> void:
 	if not glasses_lens_mesh:
 		return
-	var alpha := clamp(glasses_lens_damage * 0.42, 0.0, 0.48)
+	var alpha: float = clamp(glasses_lens_damage * 0.42, 0.0, 0.48)
 	var material := StandardMaterial3D.new()
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	material.albedo_color = Color(0.18, 0.95, 0.88, alpha)
@@ -1107,13 +1132,13 @@ func _update_wearable_power(delta: float) -> void:
 func _update_blood_tunnel() -> void:
 	if not mental or not health:
 		return
-	var blood_loss := 1.0 - clamp(health.blood_volume / 100.0, 0.0, 1.0)
+	var blood_loss: float = 1.0 - clamp(health.blood_volume / 100.0, 0.0, 1.0)
 	mental.base_fov = 75.0 - blood_loss * 14.0
 
 func _update_heartbeat(delta: float) -> void:
 	if not health or not mental:
 		return
-	var arousal := clamp(health.pain / 120.0 + mental.corruption / 160.0 + (1.0 - health.blood_volume / 100.0), 0.0, 1.0)
+	var arousal: float = clamp(health.pain / 120.0 + mental.corruption / 160.0 + (1.0 - health.blood_volume / 100.0), 0.0, 1.0)
 	if arousal < 0.18:
 		return
 	heartbeat_timer -= delta
@@ -1185,7 +1210,7 @@ func _on_weapon_recoil_requested(amount: float) -> void:
 func _recover_recoil(delta: float) -> void:
 	if recoil_return_velocity <= 0.0001:
 		return
-	var recovery := min(recoil_return_velocity, delta * 0.8)
+	var recovery: float = min(recoil_return_velocity, delta * 0.8)
 	pitch = clamp(pitch - recovery, deg_to_rad(-82.0), deg_to_rad(82.0))
 	head.rotation.x = pitch
 	recoil_return_velocity -= recovery
@@ -1193,7 +1218,7 @@ func _recover_recoil(delta: float) -> void:
 func _on_weapon_condition_changed(condition: float) -> void:
 	if not weapon_pivot:
 		return
-	var scar_amount := clamp((0.6 - condition) / 0.6, 0.0, 1.0)
+	var scar_amount: float = clamp((0.6 - condition) / 0.6, 0.0, 1.0)
 	if scar_amount <= 0.0:
 		return
 	var material := EffectMaterialCache.get_material(Color(0.12, 0.13, 0.13).lerp(Color(0.38, 0.18, 0.12), scar_amount), scar_amount * 0.18)

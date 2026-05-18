@@ -92,9 +92,9 @@ func _fill_stream(playback, profile: Dictionary, intensity: float) -> void:
 	var noisy := bool(profile["noisy"])
 	for frame in range(frame_count):
 		var t := float(frame) / float(MIX_RATE)
-		var envelope := 1.0 - clamp(t / max(0.01, duration), 0.0, 1.0)
+		var envelope: float = 1.0 - clamp(t / max(0.01, duration), 0.0, 1.0)
 		var tone := sin(TAU * frequency * t)
 		if noisy:
 			tone = tone * 0.45 + randf_range(-1.0, 1.0) * 0.55
-		var sample := clamp(tone * volume * envelope, -1.0, 1.0)
+		var sample: float = clamp(tone * volume * envelope, -1.0, 1.0)
 		playback.push_frame(Vector2(sample, sample))

@@ -15,7 +15,10 @@ static func get_archetypes() -> Array[Dictionary]:
 		_a("surgeon", "Surgeon", 62, 3.0, 1.4, 22, 1.0, Color(0.34, 0.28, 0.26), {}, ["kit_hunter"]),
 		_a("choir", "Choir", 150, 1.55, 1.8, 20, 0.8, Color(0.2, 0.16, 0.26), {"torso": 0.25}, ["corruption_aura"]),
 		_a("shellroot", "Shellroot", 180, 0.0, 0.0, 0, 0.0, Color(0.14, 0.2, 0.16), {"torso": 0.7, "left_arm": 0.7, "right_arm": 0.7, "left_leg": 0.7, "right_leg": 0.7}, ["thermal_blocker", "immobile"]),
-		_a("relay_voice", "Relay Voice", 48, 2.7, 1.4, 18, 1.1, Color(0.25, 0.2, 0.3), {}, ["false_comms"])
+		_a("relay_voice", "Relay Voice", 48, 2.7, 1.4, 18, 1.1, Color(0.25, 0.2, 0.3), {}, ["false_comms"]),
+		_a("mimic_prop", "Mimic Prop", 44, 0.0, 1.2, 6, 0.6, Color(0.28, 0.26, 0.22), {"torso": 0.2}, ["disguised_as_prop", "classifier_lies_under_corruption"]),
+		_a("door_closer", "Door Closer", 60, 3.1, 1.6, 22, 1.1, Color(0.22, 0.18, 0.2), {}, ["closes_doors_behind_self"]),
+		_a("carrion_eater", "Carrion Eater", 50, 2.4, 1.3, 14, 0.9, Color(0.26, 0.22, 0.14), {}, ["prefers_corpses_over_player", "spawns_in_low_oxygen"])
 	]
 
 static func get_archetype(archetype_id: String) -> Dictionary:

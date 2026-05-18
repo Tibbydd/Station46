@@ -135,6 +135,8 @@ func _build_arena() -> void:
 	_build_survivor_entry_scenarios()
 	_build_hidden_route_markers()
 	_build_dynamic_environment_props()
+	_build_interior_partitions()
+	_build_npc_survivors()
 
 func _register_nav_blocker(position: Vector3, size: Vector3) -> void:
 	nav_blockers.append({
@@ -878,6 +880,81 @@ func _build_director() -> void:
 	threat_director.setup(player, enemy_container, spawn_points)
 	if route_system:
 		threat_director.set_station_floor(route_system.current_floor)
+	_spawn_demo_enemies()
+
+func _build_interior_partitions() -> void:
+	# A few interior walls so the arena reads as a room, not a flat plane.
+	# All are aligned to the existing nav grid so the navmesh rebuild still
+	# allows reasonable enemy paths around them.
+	var partitions := [
+		[Vector3(-4.0, 1.5, -2.0), Vector3(0.4, 3.0, 8.0)],
+		[Vector3(6.0, 1.5, 2.0), Vector3(0.4, 3.0, 6.0)],
+		[Vector3(-2.0, 1.5, 11.0), Vector3(8.0, 3.0, 0.4)],
+		[Vector3(3.0, 1.5, -11.0), Vector3(8.0, 3.0, 0.4)],
+	]
+	for spec in partitions:
+		var partition_position: Vector3 = spec[0]
+		var partition_size: Vector3 = spec[1]
+		_create_box("InteriorPartition", partition_position, partition_size, Color(0.16, 0.18, 0.2), true)
+		_register_nav_blocker(partition_position, partition_size)
+	_build_navigation_region()
+
+func _build_npc_survivors() -> void:
+	# Three placeholder humanoid NPCs derived from
+	# ImmersiveSimDesign.get_npc_survivor_encounters(). Capsule + head sphere,
+	# role-colored, with a billboarded role label so you can find them.
+	var encounters := [
+		{
+			"encounter_id": "wounded_courier",
+			"role_label": "Courier",
+			"color": Color(0.4, 0.34, 0.14),
+			"position": Vector3(-9.5, 0.0, 6.5)
+		},
+		{
+			"encounter_id": "panicked_researcher",
+			"role_label": "Researcher",
+			"color": Color(0.2, 0.46, 0.5),
+			"position": Vector3(8.5, 0.0, -6.5)
+		},
+		{
+			"encounter_id": "trapped_engineer",
+			"role_label": "Engineer",
+			"color": Color(0.46, 0.28, 0.18),
+			"position": Vector3(-9.0, 0.0, -8.0)
+		},
+	]
+	for encounter in encounters:
+		var npc := NpcSurvivor3D.new()
+		var encounter_color: Color = encounter["color"]
+		var encounter_position: Vector3 = encounter["position"]
+		npc.configure(
+			String(encounter["encounter_id"]),
+			String(encounter["role_label"]),
+			encounter_color
+		)
+		arena_root.add_child(npc)
+		npc.global_position = encounter_position
+
+func _spawn_demo_enemies() -> void:
+	# One of each main archetype, parked at known positions so the first launch
+	# shows visual variety without waiting on the threat director ramp.
+	# archetype_id must be set before add_child triggers _ready().
+	if not threat_director or not enemy_container:
+		return
+	var demos := [
+		{"id": "stalker_husk", "position": Vector3(-15.0, 0.0, -15.0)},
+		{"id": "crawler_husk", "position": Vector3(15.0, 0.0, -15.0)},
+		{"id": "bleeder", "position": Vector3(-15.0, 0.0, 15.0)},
+		{"id": "carapace", "position": Vector3(15.0, 0.0, 15.0)},
+	]
+	for demo in demos:
+		var enemy := EnemyBase3D.new()
+		var demo_position: Vector3 = demo["position"]
+		enemy.archetype_id = String(demo["id"])
+		enemy.global_position = demo_position
+		enemy_container.add_child(enemy)
+		enemy.set_target(player)
+		threat_director.active_enemies.append(enemy)
 
 func _create_box(box_name: String, position: Vector3, size: Vector3, color: Color, collision: bool, surface_id: String = "metal") -> Node3D:
 	var root: Node3D

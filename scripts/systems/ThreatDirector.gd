@@ -43,7 +43,7 @@ func _process(delta: float) -> void:
 		spawn_timer = _next_spawn_interval()
 
 func _update_threat() -> void:
-	var time_pressure := clamp(elapsed / max(1.0, threat_ramp_reference), 0.0, 0.45)
+	var time_pressure: float = clamp(elapsed / max(1.0, threat_ramp_reference), 0.0, 0.45)
 	var kill_pressure := enemies_killed * 0.035
 	var corruption_pressure := player.mental.corruption / 180.0 if player.mental else 0.0
 	threat_level = clamp(time_pressure + kill_pressure + noise_pressure + corruption_pressure, 0.0, 1.0)

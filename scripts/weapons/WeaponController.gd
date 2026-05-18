@@ -105,7 +105,7 @@ func start_reload() -> bool:
 	if owner_health and not owner_health.can_hold_weapon():
 		return false
 	if current_ammo > 0 and _uses_partial_magazines():
-		var dropped_rounds := max(0, current_ammo - 1)
+		var dropped_rounds: int = max(0, current_ammo - 1)
 		if dropped_rounds > 0:
 			_drop_partial_magazine(dropped_rounds)
 		current_ammo = 1
@@ -141,7 +141,7 @@ func has_attachment(attachment_id: String) -> bool:
 
 func _finish_reload() -> void:
 	var needed := _get_effective_magazine_size() - current_ammo
-	var loaded := min(needed, reserve_ammo)
+	var loaded: int = min(needed, reserve_ammo)
 	current_ammo += loaded
 	reserve_ammo -= loaded
 	chamber_loaded = current_ammo > 0
