@@ -22,11 +22,11 @@ func apply_impulse(position: Vector3, radius: float, force: float, source: Node,
 		if distance > radius:
 			continue
 		var falloff := 1.0 - distance / radius
-		var local_force := force * clamp(falloff, 0.0, 1.0)
+		var local_force: float = force * clamp(falloff, 0.0, 1.0)
 		if node.has_method("apply_environment_impulse"):
 			node.apply_environment_impulse(position, local_force, radius, reason)
 		elif node is RigidBody3D:
-			var body := node as RigidBody3D
+			var body: RigidBody3D = node
 			var direction := (node3d.global_position - position).normalized()
 			if direction.length() < 0.01:
 				direction = Vector3.UP

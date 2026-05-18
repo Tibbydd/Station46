@@ -1,7 +1,7 @@
 extends SceneTree
 
 func _initialize() -> void:
-	var arena := load("res://scenes/PrototypeArena.tscn").instantiate()
+	var arena: Node = preload("res://scenes/PrototypeArena.tscn").instantiate()
 	root.add_child(arena)
 	await process_frame
 	await process_frame
