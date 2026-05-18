@@ -1202,7 +1202,7 @@ func _load_facility_snapshot() -> bool:
 	var file := FileAccess.open("user://facility_snapshot.json", FileAccess.READ)
 	if not file:
 		return false
-	var parsed = JSON.parse_string(file.get_as_text())
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
 	if not (parsed is Dictionary):
 		return false
 	facility_state.load_save_dict(parsed.get("facility", {}))

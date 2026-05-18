@@ -49,7 +49,7 @@ func _advance_projectile(delta: float) -> void:
 	for i in range(step_count):
 		velocity.y -= gravity * step_delta
 		var next_position := global_position + velocity * step_delta
-		var collider = _find_overlap_at(next_position)
+		var collider: Object = _find_overlap_at(next_position)
 		global_position = next_position
 		if collider:
 			_impact_collider(collider)
@@ -65,7 +65,7 @@ func _on_body_entered(body: Node3D) -> void:
 		return
 	_impact_collider(body)
 
-func _find_overlap_at(test_position: Vector3):
+func _find_overlap_at(test_position: Vector3) -> Object:
 	if not projectile_shape:
 		return null
 	var query := PhysicsShapeQueryParameters3D.new()
@@ -77,9 +77,9 @@ func _find_overlap_at(test_position: Vector3):
 	if source_body and source_body is CollisionObject3D:
 		query.exclude = [source_body.get_rid()]
 	var hits := get_world_3d().direct_space_state.intersect_shape(query, 8)
-	var fallback_collider = null
+	var fallback_collider: Object = null
 	for hit in hits:
-		var collider = hit.get("collider")
+		var collider: Object = hit.get("collider")
 		if collider and collider != self and collider != source_body:
 			if collider.has_method("apply_hit"):
 				return collider
